@@ -1,0 +1,12 @@
+version: '3'
+services:
+  nostr-bot-sync:
+    build: .
+    # env_file:
+    #   - ./.env
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m
