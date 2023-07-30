@@ -71,10 +71,10 @@ async function main() {
       subscribeEvents.on("event", (event) => {
         console.log(event);
         const pub = pool.publish([DESTINATION_RELAY], event);
-        pub.on("ok", ()=>{
+        pub.on("ok", () => {
           console.log("OK", event.id);
         });
-        pub.on("failed", ()=>{
+        pub.on("failed", () => {
           console.log("NG", event.id);
         })
       })
