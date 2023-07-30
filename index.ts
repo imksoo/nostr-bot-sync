@@ -20,6 +20,7 @@ async function main() {
     process.exit(1);
   }, 60 * 1000);
   await srcRelay.connect();
+  console.log("Source relay connected");
   clearTimeout(srcRelayTimeout);
 
   const destRelay = Nostr.relayInit(DESTINATION_RELAY);
@@ -36,6 +37,7 @@ async function main() {
     process.exit(1);
   }, 60 * 1000);
   await destRelay.connect();
+  console.log("Destination relay connected");
   clearTimeout(destRelayTimeout);
 
   const pool = new Nostr.SimplePool();
@@ -51,20 +53,20 @@ async function main() {
       subscribeEvents.unsub();
     }
 
+    console.log("Collect Bots");
     let followers: string[];
-    subscribeEvents = pool.sub([SOURCE_RELAY], [{
+    subscribeEvents = pool.sub([SOURCE_RELAY, DESTINATION_RELAY], [{
       kinds: [3],
       authors: [BOT_LIST_PUBKEY],
-      limit: 1
     }]);
     subscribeEvents.on("event", (event) => {
       followers = event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1]));
-      console.log("followers", followers);
+      console.log("followers", JSON.stringify(followers));
       subscribeEvents?.unsub();
 
       subscribeEvents = pool.sub([SOURCE_RELAY], [{
         authors: [...(new Set(followers))],
-        since: Math.floor((new Date().getTime() / 1000) - 5 * 60)
+        since: Math.floor((new Date().getTime() / 1000) - 60 * 60),
       }]);
       subscribeEvents.on("event", (event) => {
         console.log(event);
