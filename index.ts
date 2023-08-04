@@ -1,5 +1,6 @@
 import "websocket-polyfill";
 import * as Nostr from "nostr-tools";
+const franc: any = require('franc-min');
 
 const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
 const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
@@ -75,17 +76,38 @@ async function main() {
 
       const subscribeEvents = pool.sub([SOURCE_RELAY], [{
         authors: [...(new Set(followers))],
+        kinds: [1, 5],
         since: Math.floor((new Date().getTime() / 1000) - 60 * 60),
       }]);
       subscribeEvents.on("event", (event) => {
         console.log("Received event: ", JSON.stringify(event));
-        const pub = pool.publish([DESTINATION_RELAY], event);
-        pub.on("ok", () => {
-          console.log("Publish OK: ", event.id);
-        });
-        pub.on("failed", () => {
-          console.log("Publish NG: ", event.id);
-        })
+
+        switch (event.kind) {
+          case 5: {
+            const pub = pool.publish([DESTINATION_RELAY], event);
+            pub.on("ok", () => {
+              console.log("Publish OK: ", event.id, event.kind);
+            });
+            pub.on("failed", () => {
+              console.log("Publish NG: ", event.id, event.kind);
+            })
+          } break;
+          case 1: {
+            const event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+
+            if (event_lang === "jpn") {
+              const pub = pool.publish([DESTINATION_RELAY], event);
+              pub.on("ok", () => {
+                console.log("Publish OK: ", event.id, event_lang, JSON.stringify(event.content));
+              });
+              pub.on("failed", () => {
+                console.log("Publish NG: ", event.id, event_lang, JSON.stringify(event.content));
+              })
+            } else {
+              console.log("Publish skipped.", event.id, event_lang, JSON.stringify(event.content));
+            }
+          } break;
+        }
       })
     });
   }
