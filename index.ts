@@ -54,7 +54,7 @@ async function main() {
   setTimeout(() => {
     console.log("Interval restart.");
     process.exit(0);
-  }, 10 * 60 * 1000);
+  }, 55 * 60 * 1000);
 
   async function duplicateEvents() {
     console.log("Collecting follows...");
@@ -83,8 +83,7 @@ async function main() {
         console.log("Received event: ", JSON.stringify(event));
 
         switch (event.kind) {
-          case 0:
-          case 5: {
+          case 0: case 5: {
             const pub = pool.publish([DESTINATION_RELAY], event);
             pub.on("ok", () => {
               console.log("Publish OK: ", event.id, event.kind);
