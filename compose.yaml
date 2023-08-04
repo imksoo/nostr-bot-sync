@@ -1,12 +1,50 @@
 version: '3'
 services:
-  nostr-bot-sync:
+  redome-shouji:
     build: .
-    # env_file:
-    #   - ./.env
+    environment:
+      - SOURCE_RELAY=wss://relay.nostr.wirednet.jp
+      - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - BOT_LIST_PUBKEY=18c3434bf332fcbede0be65df140f1bf9ad1bbf6c923242b5b4ac798c276a35b
     restart: always
     logging:
       driver: json-file
       options:
         max-file: 4
         max-size: 16m
+  japanese-follow-bot-from-kirino-relay:
+    build: .
+    environment:
+      - SOURCE_RELAY=wss://relay.nostr.wirednet.jp
+      - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m
+  # japanese-follow-bot-from-damus:
+  #   build: .
+  #   environment:
+  #     - SOURCE_RELAY=wss://relay.damus.io
+  #     - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
+  #     - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+  #   restart: always
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-file: 4
+  #       max-size: 16m
+  # japanese-follow-bot-from-snort:
+  #   build: .
+  #   environment:
+  #     - SOURCE_RELAY=wss://relay.snort.social
+  #     - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
+  #     - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+  #   restart: always
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-file: 4
+  #       max-size: 16m

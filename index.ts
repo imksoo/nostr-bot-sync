@@ -1,9 +1,15 @@
 import "websocket-polyfill";
 import * as Nostr from "nostr-tools";
 
-const SOURCE_RELAY = "wss://relay.nostr.wirednet.jp";
-const DESTINATION_RELAY = "wss://relay-jp.nostr.wirednet.jp";
-const BOT_LIST_PUBKEY = "18c3434bf332fcbede0be65df140f1bf9ad1bbf6c923242b5b4ac798c276a35b";
+const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
+const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
+const BOT_LIST_PUBKEY = process.env.BOT_LIST_PUBKEY || "";
+
+if (SOURCE_RELAY === "" || DESTINATION_RELAY === "" || BOT_LIST_PUBKEY === "") {
+  console.log("Environment value error!");
+  console.log({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY });
+  process.exit(2);
+};
 
 async function main() {
   const srcRelay = Nostr.relayInit(SOURCE_RELAY);
@@ -18,7 +24,7 @@ async function main() {
   const srcRelayTimeout = setTimeout(() => {
     console.log("Source relay timeout.");
     process.exit(1);
-  }, 60 * 1000);
+  }, 10 * 1000);
   await srcRelay.connect();
   console.log("Source relay connected.");
   clearTimeout(srcRelayTimeout);
@@ -35,7 +41,7 @@ async function main() {
   const destRelayTimeout = setTimeout(() => {
     console.log("Destination relay timeout.");
     process.exit(1);
-  }, 60 * 1000);
+  }, 10 * 1000);
   await destRelay.connect();
   console.log("Destination relay connected.");
   clearTimeout(destRelayTimeout);
@@ -43,20 +49,26 @@ async function main() {
   const pool = new Nostr.SimplePool();
 
   duplicateEvents();
+
   setTimeout(() => {
     console.log("Interval restart.");
     process.exit(0);
-  }, 5 * 60 * 1000);
+  }, 10 * 60 * 1000);
 
   async function duplicateEvents() {
     console.log("Collecting follows...");
     let followers: string[];
+    const collectFollowsTimeout = setTimeout(() => {
+      console.log("Collect follows timeout.");
+      process.exit(1);
+    }, 30 * 1000);
     const subscribeFollowers = pool.sub([SOURCE_RELAY, DESTINATION_RELAY], [{
       kinds: [3],
       authors: [BOT_LIST_PUBKEY],
       limit: 1,
     }]);
     subscribeFollowers.on("event", (event) => {
+      clearTimeout(collectFollowsTimeout);
       followers = event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1]));
       console.log("Followers: ", JSON.stringify(followers));
       subscribeFollowers.unsub();
