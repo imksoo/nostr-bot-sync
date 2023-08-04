@@ -76,13 +76,14 @@ async function main() {
 
       const subscribeEvents = pool.sub([SOURCE_RELAY], [{
         authors: [...(new Set(followers))],
-        kinds: [1, 5],
+        kinds: [0, 1, 5],
         since: Math.floor((new Date().getTime() / 1000) - 60 * 60),
       }]);
       subscribeEvents.on("event", (event) => {
         console.log("Received event: ", JSON.stringify(event));
 
         switch (event.kind) {
+          case 0:
           case 5: {
             const pub = pool.publish([DESTINATION_RELAY], event);
             pub.on("ok", () => {
