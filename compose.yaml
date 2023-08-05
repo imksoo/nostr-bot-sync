@@ -48,3 +48,29 @@ services:
       options:
         max-file: 4
         max-size: 16m
+  japanese-follow-bot-to-damus:
+    build: .
+    environment:
+      - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - DESTINATION_RELAY=wss://relay.damus.io
+      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+      - LANGUAGE_DETECTION=off
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m
+  japanese-follow-bot-to-snort:
+    build: .
+    environment:
+      - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - DESTINATION_RELAY=wss://relay.snort.social
+      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+      - LANGUAGE_DETECTION=off
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m

@@ -5,6 +5,8 @@ const franc: any = require('franc-min');
 const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
 const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
 const BOT_LIST_PUBKEY = process.env.BOT_LIST_PUBKEY || "";
+const LANGUAGE_DETECTION = evalToggleValue("LANGUAGE_DETECTION", true);
+const PASS_LANGUAGE = "jpn";
 
 if (SOURCE_RELAY === "" || DESTINATION_RELAY === "" || BOT_LIST_PUBKEY === "") {
   console.log("Environment value error!");
@@ -93,9 +95,12 @@ async function main() {
             })
           } break;
           case 1: {
-            const event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+            let event_lang = PASS_LANGUAGE;
+            if (LANGUAGE_DETECTION) {
+              event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+            }
 
-            if (event_lang === "jpn") {
+            if (event_lang === PASS_LANGUAGE) {
               const pub = pool.publish([DESTINATION_RELAY], event);
               pub.on("ok", () => {
                 console.log("Publish OK: ", event.id, event_lang, JSON.stringify(event.content));
@@ -114,3 +119,16 @@ async function main() {
 }
 
 main();
+
+function evalToggleValue(envVarName: string, defaultValue: boolean = true): boolean {
+  const envValue = process.env[envVarName]?.toLowerCase();
+  if (!envValue) {
+    return defaultValue;
+  } else if (envValue === "true" || envValue === "on") {
+    return true;
+  } else if (envValue === "false" || envValue === "off") {
+    return false;
+  } else {
+    return defaultValue;
+  }
+}
