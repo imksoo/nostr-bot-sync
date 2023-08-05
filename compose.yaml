@@ -49,6 +49,18 @@ services:
       options:
         max-file: 4
         max-size: 16m
+  japanese-follow-bot-from-noslol:
+    build: .
+    environment:
+      - SOURCE_RELAY=wss://nos.lol
+      - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m
   japanese-follow-bot-to-damus:
     build: .
     environment:
@@ -67,6 +79,19 @@ services:
     environment:
       - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
       - DESTINATION_RELAY=wss://relay.snort.social
+      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
+      - LANGUAGE_DETECTION=off
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: 4
+        max-size: 16m
+  japanese-follow-bot-to-noslol:
+    build: .
+    environment:
+      - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
+      - DESTINATION_RELAY=wss://nos.lol
       - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
       - LANGUAGE_DETECTION=off
     restart: always

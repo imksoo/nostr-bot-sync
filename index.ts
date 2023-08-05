@@ -85,15 +85,6 @@ async function main() {
         console.log("Received event: ", JSON.stringify(event));
 
         switch (event.kind) {
-          case 0: case 5: {
-            const pub = pool.publish([DESTINATION_RELAY], event);
-            pub.on("ok", () => {
-              console.log("Publish OK: ", event.id, event.kind);
-            });
-            pub.on("failed", () => {
-              console.log("Publish NG: ", event.id, event.kind);
-            })
-          } break;
           case 1: {
             let event_lang = PASS_LANGUAGE;
             if (LANGUAGE_DETECTION) {
@@ -112,6 +103,15 @@ async function main() {
               console.log("Publish skipped.", event.id, event_lang, JSON.stringify(event.content));
             }
           } break;
+          default: {
+            const pub = pool.publish([DESTINATION_RELAY], event);
+            pub.on("ok", () => {
+              console.log("Publish OK: ", event.id, event.kind);
+            });
+            pub.on("failed", () => {
+              console.log("Publish NG: ", event.id, event.kind);
+            })
+          }
         }
       })
     });
