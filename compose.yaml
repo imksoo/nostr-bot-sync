@@ -6,6 +6,7 @@ services:
       - SOURCE_RELAY=wss://relay.nostr.wirednet.jp
       - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
       - BOT_LIST_PUBKEY=18c3434bf332fcbede0be65df140f1bf9ad1bbf6c923242b5b4ac798c276a35b
+      - LANGUAGE_DETECTION=off
     restart: always
     logging:
       driver: json-file
