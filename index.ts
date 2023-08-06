@@ -56,7 +56,7 @@ async function main() {
   setTimeout(() => {
     console.log("Interval restart.");
     process.exit(0);
-  }, 55 * 60 * 1000);
+  }, 5 * 60 * 1000);
 
   async function duplicateEvents() {
     console.log("Collecting follows...");
@@ -79,10 +79,29 @@ async function main() {
       const subscribeEvents = pool.sub([SOURCE_RELAY], [{
         authors: [...(new Set(followers))],
         kinds: [0, 1, 5],
-        since: Math.floor((new Date().getTime() / 1000) - 60 * 60),
+        since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
       }]);
       subscribeEvents.on("event", (event) => {
         console.log("Received event: ", JSON.stringify(event));
+
+        let isProxyEventOfActivityPub = false;
+        let isProxyEvent = false;
+        let sourceActivityPubUrl = "";
+        for (let i = 0; i < event.tags.length; ++i) {
+          if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
+            isProxyEventOfActivityPub = true;
+            sourceActivityPubUrl = event.tags[i][2];
+          } else if (event.tags[i][0] === "proxy") {
+            isProxyEvent = true;
+          }
+        }
+        if (isProxyEventOfActivityPub) {
+          console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
+          return;
+        } else if (isProxyEvent) {
+          console.log("Proxy event is ignored.", event.id);
+          return;
+        }
 
         switch (event.kind) {
           case 1: {
