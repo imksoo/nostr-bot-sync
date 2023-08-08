@@ -5,6 +5,7 @@ const franc: any = require('franc-min');
 const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
 const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
 const BOT_LIST_PUBKEY = process.env.BOT_LIST_PUBKEY || "";
+const BLOCK_PUBKEYS = process.env.BLOCK_PUBKEYS || "";
 const LANGUAGE_DETECTION = evalToggleValue("LANGUAGE_DETECTION", true);
 const PASS_LANGUAGE = "jpn";
 
@@ -13,6 +14,9 @@ if (SOURCE_RELAY === "" || DESTINATION_RELAY === "" || BOT_LIST_PUBKEY === "") {
   console.log({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY });
   process.exit(2);
 };
+
+console.log("Started nostr-bot-sync");
+console.log(JSON.stringify({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY, BLOCK_PUBKEYS, LANGUAGE_DETECTION, PASS_LANGUAGE }, undefined, 2))
 
 async function main() {
   const srcRelay = Nostr.relayInit(SOURCE_RELAY);
@@ -100,6 +104,12 @@ async function main() {
           return;
         } else if (isProxyEvent) {
           console.log("Proxy event is ignored.", event.id);
+          return;
+        }
+
+        const isPubkeyBlocked = BLOCK_PUBKEYS.includes(event.pubkey);
+        if (isPubkeyBlocked) {
+          console.log("Blocked pubkey.", event.id, event.pubkey);
           return;
         }
 
