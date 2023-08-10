@@ -5,6 +5,7 @@ const franc: any = require('franc-min');
 const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
 const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
 const BOT_LIST_PUBKEY = process.env.BOT_LIST_PUBKEY || "";
+const BLOCK_BOT_LIST_PUBKEY = process.env.BLOCK_BOT_LIST_PUBKEY || "";
 const BLOCK_PUBKEYS = process.env.BLOCK_PUBKEYS || "";
 const LANGUAGE_DETECTION = evalToggleValue("LANGUAGE_DETECTION", true);
 const PASS_LANGUAGE = "jpn";
@@ -63,6 +64,20 @@ async function main() {
   }, 5 * 60 * 1000);
 
   async function duplicateEvents() {
+    let blockers: string[];
+    if (BLOCK_BOT_LIST_PUBKEY) {
+      console.log("Collecting blockers...");
+      const subscribeBlockers = pool.sub([SOURCE_RELAY, DESTINATION_RELAY], [{
+        kinds: [3],
+        authors: [BLOCK_BOT_LIST_PUBKEY],
+        limit: 1,
+      }]);
+      subscribeBlockers.on("event", (event) => {
+        blockers = event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1]));
+        console.log("Blokers=", blockers);
+      });
+    }
+
     console.log("Collecting follows...");
     let followers: string[];
     const collectFollowsTimeout = setTimeout(() => {
@@ -107,7 +122,7 @@ async function main() {
           return;
         }
 
-        const isPubkeyBlocked = BLOCK_PUBKEYS.includes(event.pubkey);
+        const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
         if (isPubkeyBlocked) {
           console.log("Blocked pubkey.", event.id, event.pubkey);
           return;
