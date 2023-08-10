@@ -91,73 +91,79 @@ async function main() {
     }]);
     subscribeFollowers.on("event", (event) => {
       clearTimeout(collectFollowsTimeout);
-      followers = event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1]));
+      followers = [...new Set(event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1])))];
       console.log("Followers: ", JSON.stringify(followers));
       subscribeFollowers.unsub();
 
-      const subscribeEvents = pool.sub([SOURCE_RELAY], [{
-        authors: [...(new Set(followers))],
-        kinds: [0, 1, 5],
-        since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
-      }]);
-      subscribeEvents.on("event", (event) => {
-        console.log("Received event: ", JSON.stringify(event));
+      const splitLength = 1000;
+      for (let begin = 0; begin < followers.length; begin += splitLength) {
+        const end = begin + splitLength
+        const subFollowers = followers.slice(begin, end);
 
-        let isProxyEventOfActivityPub = false;
-        let isProxyEvent = false;
-        let sourceActivityPubUrl = "";
-        for (let i = 0; i < event.tags.length; ++i) {
-          if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
-            isProxyEventOfActivityPub = true;
-            sourceActivityPubUrl = event.tags[i][2];
-          } else if (event.tags[i][0] === "proxy") {
-            isProxyEvent = true;
-          }
-        }
-        if (isProxyEventOfActivityPub) {
-          console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
-          return;
-        } else if (isProxyEvent) {
-          console.log("Proxy event is ignored.", event.id);
-          return;
-        }
+        const subscribeEvents = pool.sub([SOURCE_RELAY], [{
+          authors: subFollowers,
+          kinds: [0, 1, 5],
+          since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
+        }]);
+        subscribeEvents.on("event", (event) => {
+          console.log("Received event: ", JSON.stringify(event));
 
-        const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
-        if (isPubkeyBlocked) {
-          console.log("Blocked pubkey.", event.id, event.pubkey);
-          return;
-        }
-
-        switch (event.kind) {
-          case 1: {
-            let event_lang = PASS_LANGUAGE;
-            if (LANGUAGE_DETECTION) {
-              event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+          let isProxyEventOfActivityPub = false;
+          let isProxyEvent = false;
+          let sourceActivityPubUrl = "";
+          for (let i = 0; i < event.tags.length; ++i) {
+            if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
+              isProxyEventOfActivityPub = true;
+              sourceActivityPubUrl = event.tags[i][2];
+            } else if (event.tags[i][0] === "proxy") {
+              isProxyEvent = true;
             }
+          }
+          if (isProxyEventOfActivityPub) {
+            console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
+            return;
+          } else if (isProxyEvent) {
+            console.log("Proxy event is ignored.", event.id);
+            return;
+          }
 
-            if (event_lang === PASS_LANGUAGE) {
+          const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
+          if (isPubkeyBlocked) {
+            console.log("Blocked pubkey.", event.id, event.pubkey);
+            return;
+          }
+
+          switch (event.kind) {
+            case 1: {
+              let event_lang = PASS_LANGUAGE;
+              if (LANGUAGE_DETECTION) {
+                event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+              }
+
+              if (event_lang === PASS_LANGUAGE) {
+                const pub = pool.publish([DESTINATION_RELAY], event);
+                pub.on("ok", () => {
+                  console.log("Publish OK: ", event.id, event_lang, JSON.stringify(event.content));
+                });
+                pub.on("failed", () => {
+                  console.log("Publish NG: ", event.id, event_lang, JSON.stringify(event.content));
+                })
+              } else {
+                console.log("Publish skipped.", event.id, event_lang, JSON.stringify(event.content));
+              }
+            } break;
+            default: {
               const pub = pool.publish([DESTINATION_RELAY], event);
               pub.on("ok", () => {
-                console.log("Publish OK: ", event.id, event_lang, JSON.stringify(event.content));
+                console.log("Publish OK: ", event.id, event.kind);
               });
               pub.on("failed", () => {
-                console.log("Publish NG: ", event.id, event_lang, JSON.stringify(event.content));
+                console.log("Publish NG: ", event.id, event.kind);
               })
-            } else {
-              console.log("Publish skipped.", event.id, event_lang, JSON.stringify(event.content));
             }
-          } break;
-          default: {
-            const pub = pool.publish([DESTINATION_RELAY], event);
-            pub.on("ok", () => {
-              console.log("Publish OK: ", event.id, event.kind);
-            });
-            pub.on("failed", () => {
-              console.log("Publish NG: ", event.id, event.kind);
-            })
           }
-        }
-      })
+        });
+      }
     });
   }
 }
