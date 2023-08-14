@@ -10,6 +10,27 @@ const BLOCK_PUBKEYS = process.env.BLOCK_PUBKEYS || "";
 const LANGUAGE_DETECTION = evalToggleValue("LANGUAGE_DETECTION", true);
 const PASS_LANGUAGE = "jpn";
 
+const contentFilters: RegExp[] = [
+  /avive/i,
+  /web3/i,
+  /lnbc/,
+  /t\.me/,
+  /nostr-vip\.top/,
+  /1C-0OTP4DRCWJY17XvOHO/,
+  /\$GPT/,
+  /Claim your free/,
+  /Claim Free/i,
+  /shop\.55uu\.wang/,
+  /dosoos/i,
+  /coderba/i,
+  /人工智能/,
+  /dapp/,
+  /motherfuckers/,
+  /shitspaming/,
+  /telegra\.ph/,
+  /nsfw/i,
+];
+
 if (SOURCE_RELAY === "" || DESTINATION_RELAY === "" || BOT_LIST_PUBKEY === "") {
   console.log("Environment value error!");
   console.log({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY });
@@ -131,6 +152,20 @@ async function main() {
           if (isPubkeyBlocked) {
             console.log("Blocked pubkey.", event.id, event.pubkey);
             return;
+          }
+
+          if (event.kind === 1) {
+            let shouldRelay = true;
+            for (const filter of contentFilters) {
+              if (filter.test(event.content)) {
+                shouldRelay = false;
+                break;
+              }
+            }
+            if (shouldRelay === false) {
+              console.log("Blocked content.", event.id, event.content);
+              return;
+            }
           }
 
           switch (event.kind) {
