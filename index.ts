@@ -2,6 +2,12 @@ import "websocket-polyfill";
 import * as Nostr from "nostr-tools";
 const franc: any = require('franc-min');
 
+const NODE_ENV = process.env.NODE_ENV || "production";
+if (NODE_ENV === "production") {
+  console.debug = (...data) => {
+  };
+}
+
 const SOURCE_RELAY = process.env.SOURCE_RELAY || "";
 const DESTINATION_RELAY = process.env.DESTINATION_RELAY || "";
 const BOT_LIST_PUBKEY = process.env.BOT_LIST_PUBKEY || "";
@@ -38,7 +44,7 @@ if (SOURCE_RELAY === "" || DESTINATION_RELAY === "" || BOT_LIST_PUBKEY === "") {
 };
 
 console.log("Started nostr-bot-sync");
-console.log(JSON.stringify({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY, BLOCK_PUBKEYS, LANGUAGE_DETECTION, PASS_LANGUAGE }, undefined, 2))
+console.debug(JSON.stringify({ SOURCE_RELAY, DESTINATION_RELAY, BOT_LIST_PUBKEY, BLOCK_PUBKEYS, LANGUAGE_DETECTION, PASS_LANGUAGE }, undefined, 2))
 
 async function main() {
   const srcRelay = Nostr.relayInit(SOURCE_RELAY);
@@ -95,7 +101,7 @@ async function main() {
       }]);
       subscribeBlockers.on("event", (event) => {
         blockers = event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1]));
-        console.log("Blokers=", blockers);
+        console.debug("Blokers=", blockers);
       });
     }
 
@@ -113,7 +119,7 @@ async function main() {
     subscribeFollowers.on("event", (event) => {
       clearTimeout(collectFollowsTimeout);
       followers = [...new Set(event.tags.filter((t) => (t[0] === "p")).map((t) => (t[1])))];
-      console.log("Followers: ", JSON.stringify(followers));
+      console.debug("Followers: ", JSON.stringify(followers));
       subscribeFollowers.unsub();
 
       const subscribeKind0and5 = pool.sub([SOURCE_RELAY], [{
