@@ -125,6 +125,9 @@ async function main() {
           authors: subFollowers,
           kinds: [0, 1, 2, 3, 5, 10000, 10002, 30000],
           since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
+        }, {
+          kinds: [0, 5],
+          since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
         }]);
         subscribeEvents.on("event", (event) => {
           console.log("Received event: ", JSON.stringify(event));
