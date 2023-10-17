@@ -82,7 +82,7 @@ async function main() {
   setTimeout(() => {
     console.log("Interval restart.");
     process.exit(0);
-  }, 5 * 60 * 1000);
+  }, Math.floor((5.5 - Math.random()) * 60) * 1000);
 
   async function duplicateEvents() {
     let blockers: string[];
@@ -116,6 +116,12 @@ async function main() {
       console.log("Followers: ", JSON.stringify(followers));
       subscribeFollowers.unsub();
 
+      const subscribeKind0and5 = pool.sub([SOURCE_RELAY], [{
+        kinds: [0, 5],
+        since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
+      }]);
+      subscribeKind0and5.on("event", (event) => { transmitEvent(event, pool, blockers) });
+
       const splitLength = 1000;
       for (let begin = 0; begin < followers.length; begin += splitLength) {
         const end = begin + splitLength
@@ -125,82 +131,8 @@ async function main() {
           authors: subFollowers,
           kinds: [0, 1, 2, 3, 5, 10000, 10002, 30000],
           since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
-        }, {
-          kinds: [0, 5],
-          since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
         }]);
-        subscribeEvents.on("event", (event) => {
-          console.log("Received event: ", JSON.stringify(event));
-
-          let isProxyEventOfActivityPub = false;
-          let isProxyEvent = false;
-          let sourceActivityPubUrl = "";
-          for (let i = 0; i < event.tags.length; ++i) {
-            if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
-              isProxyEventOfActivityPub = true;
-              sourceActivityPubUrl = event.tags[i][2];
-            } else if (event.tags[i][0] === "proxy") {
-              isProxyEvent = true;
-            }
-          }
-          if (isProxyEventOfActivityPub) {
-            console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
-            return;
-          } else if (isProxyEvent) {
-            console.log("Proxy event is ignored.", event.id);
-            return;
-          }
-
-          const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
-          if (isPubkeyBlocked) {
-            console.log("Blocked pubkey.", event.id, event.pubkey);
-            return;
-          }
-
-          if (event.kind === 1) {
-            let shouldRelay = true;
-            for (const filter of contentFilters) {
-              if (filter.test(event.content)) {
-                shouldRelay = false;
-                break;
-              }
-            }
-            if (shouldRelay === false) {
-              console.log("Blocked content.", event.id, event.content);
-              return;
-            }
-          }
-
-          switch (event.kind) {
-            case 1: {
-              let event_lang = PASS_LANGUAGE;
-              if (LANGUAGE_DETECTION) {
-                event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
-              }
-
-              if (event_lang === PASS_LANGUAGE) {
-                const pub = pool.publish([DESTINATION_RELAY], event);
-                pub.on("ok", () => {
-                  console.log("Publish OK: ", event.id, event_lang, JSON.stringify(event.content));
-                });
-                pub.on("failed", () => {
-                  console.log("Publish NG: ", event.id, event_lang, JSON.stringify(event.content));
-                })
-              } else {
-                console.log("Publish skipped.", event.id, event_lang, JSON.stringify(event.content));
-              }
-            } break;
-            default: {
-              const pub = pool.publish([DESTINATION_RELAY], event);
-              pub.on("ok", () => {
-                console.log("Publish OK: ", event.id, event.kind);
-              });
-              pub.on("failed", () => {
-                console.log("Publish NG: ", event.id, event.kind);
-              })
-            }
-          }
-        });
+        subscribeEvents.on("event", (event) => { transmitEvent(event, pool, blockers) });
       }
     });
   }
@@ -218,5 +150,78 @@ function evalToggleValue(envVarName: string, defaultValue: boolean = true): bool
     return false;
   } else {
     return defaultValue;
+  }
+}
+
+function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 10000 | 10002 | 30000>, pool: Nostr.SimplePool, blockers: string[]) {
+  console.log("Received event: ", JSON.stringify(event));
+
+  let isProxyEventOfActivityPub = false;
+  let isProxyEvent = false;
+  let sourceActivityPubUrl = "";
+  for (let i = 0; i < event.tags.length; ++i) {
+    if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
+      isProxyEventOfActivityPub = true;
+      sourceActivityPubUrl = event.tags[i][2];
+    } else if (event.tags[i][0] === "proxy") {
+      isProxyEvent = true;
+    }
+  }
+  if (isProxyEventOfActivityPub) {
+    console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
+    return;
+  } else if (isProxyEvent) {
+    console.log("Proxy event is ignored.", event.id);
+    return;
+  }
+
+  const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
+  if (isPubkeyBlocked) {
+    console.log("Blocked pubkey.", event.id, event.pubkey);
+    return;
+  }
+
+  if (event.kind === 1) {
+    let shouldRelay = true;
+    for (const filter of contentFilters) {
+      if (filter.test(event.content)) {
+        shouldRelay = false;
+        break;
+      }
+    }
+    if (shouldRelay === false) {
+      console.log("Blocked content.", event.id, event.content);
+      return;
+    }
+  }
+
+  switch (event.kind) {
+    case 1: {
+      let event_lang = PASS_LANGUAGE;
+      if (LANGUAGE_DETECTION) {
+        event_lang = franc(event.content.replace(/[\x00-\x7F]/g, "").repeat(50));
+      }
+
+      if (event_lang === PASS_LANGUAGE) {
+        const pub = pool.publish([DESTINATION_RELAY], event);
+        pub.on("ok", () => {
+          console.log("Publish OK: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
+        });
+        pub.on("failed", () => {
+          console.log("Publish NG: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
+        })
+      } else {
+        console.log("Publish skipped.", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
+      }
+    } break;
+    default: {
+      const pub = pool.publish([DESTINATION_RELAY], event);
+      pub.on("ok", () => {
+        console.log("Publish OK: ", event.id, `kind=${event.kind}`);
+      });
+      pub.on("failed", () => {
+        console.log("Publish NG: ", event.id, `kind=${event.kind}`);
+      })
+    }
   }
 }
