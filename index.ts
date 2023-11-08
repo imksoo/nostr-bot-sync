@@ -135,7 +135,7 @@ async function main() {
 
         const subscribeEvents = pool.sub([SOURCE_RELAY], [{
           authors: subFollowers,
-          kinds: [0, 1, 2, 3, 5, 10000, 10002, 30000],
+          kinds: [0, 1, 2, 3, 5, 40, 41, 42, 10000, 10002, 30000],
           since: Math.floor((new Date().getTime() / 1000) - 10 * 60),
         }]);
         subscribeEvents.on("event", (event) => { transmitEvent(event, pool, blockers) });
@@ -159,7 +159,7 @@ function evalToggleValue(envVarName: string, defaultValue: boolean = true): bool
   }
 }
 
-function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 10000 | 10002 | 30000>, pool: Nostr.SimplePool, blockers: string[]) {
+function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 40 | 41 | 42 | 10000 | 10002 | 30000>, pool: Nostr.SimplePool, blockers: string[]) {
   console.log("Received event: ", JSON.stringify(event));
 
   let isProxyEventOfActivityPub = false;
