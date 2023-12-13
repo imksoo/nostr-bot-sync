@@ -128,7 +128,7 @@ async function main() {
       }]);
       subscribeKind0and5.on("event", (event) => { transmitEvent(event, pool, blockers) });
 
-      const splitLength = 1000;
+      const splitLength = 200;
       for (let begin = 0; begin < followers.length; begin += splitLength) {
         const end = begin + splitLength
         const subFollowers = followers.slice(begin, end);
