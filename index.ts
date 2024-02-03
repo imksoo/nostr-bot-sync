@@ -88,7 +88,7 @@ async function main() {
   setTimeout(() => {
     console.log("Interval restart.");
     process.exit(0);
-  }, Math.floor((5.5 - Math.random()) * 60) * 1000);
+  }, Math.floor((15.5 - Math.random()) * 60) * 1000);
 
   async function duplicateEvents() {
     let blockers: string[];
@@ -128,7 +128,7 @@ async function main() {
       }]);
       subscribeKind0and5.on("event", (event) => { transmitEvent(event, pool, blockers) });
 
-      const splitLength = 200;
+      const splitLength = 500;
       for (let begin = 0; begin < followers.length; begin += splitLength) {
         const end = begin + splitLength
         const subFollowers = followers.slice(begin, end);
@@ -209,25 +209,29 @@ function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 40 | 41 | 42 | 100
       }
 
       if (event_lang === PASS_LANGUAGE) {
-        const pub = pool.publish([DESTINATION_RELAY], event);
-        pub.on("ok", () => {
-          console.log("Publish OK: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
-        });
-        pub.on("failed", () => {
-          console.log("Publish NG: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
-        })
+        setTimeout(() => {
+          const pub = pool.publish([DESTINATION_RELAY], event);
+          pub.on("ok", () => {
+            console.log("Publish OK: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
+          });
+          pub.on("failed", () => {
+            console.log("Publish NG: ", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
+          })
+        }, 500);
       } else {
         console.log("Publish skipped.", event.id, `kind=${event.kind}`, event_lang, JSON.stringify(event.content));
       }
     } break;
     default: {
-      const pub = pool.publish([DESTINATION_RELAY], event);
-      pub.on("ok", () => {
-        console.log("Publish OK: ", event.id, `kind=${event.kind}`);
-      });
-      pub.on("failed", () => {
-        console.log("Publish NG: ", event.id, `kind=${event.kind}`);
-      })
+      setTimeout(() => {
+        const pub = pool.publish([DESTINATION_RELAY], event);
+        pub.on("ok", () => {
+          console.log("Publish OK: ", event.id, `kind=${event.kind}`);
+        });
+        pub.on("failed", () => {
+          console.log("Publish NG: ", event.id, `kind=${event.kind}`);
+        })
+      }, 500);
     }
   }
 }
