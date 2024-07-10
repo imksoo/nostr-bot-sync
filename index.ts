@@ -164,6 +164,7 @@ function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 40 | 41 | 42 | 100
 
   let isProxyEventOfActivityPub = false;
   let isProxyEvent = false;
+  let proxyEventType = "";
   let sourceActivityPubUrl = "";
   for (let i = 0; i < event.tags.length; ++i) {
     if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
@@ -171,14 +172,16 @@ function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 40 | 41 | 42 | 100
       sourceActivityPubUrl = event.tags[i][2];
     } else if (event.tags[i][0] === "proxy") {
       isProxyEvent = true;
+      proxyEventType = event.tags[i][2];
     }
   }
   if (isProxyEventOfActivityPub) {
     console.log("ActivityPub proxy event is ignored.", event.id, sourceActivityPubUrl);
     return;
   } else if (isProxyEvent) {
-    console.log("Proxy event is ignored.", event.id);
-    return;
+    console.log("Proxy event.", proxyEventType, event.id);
+    // console.log("Proxy event is ignored.", event.id);
+    // return;
   }
 
   const isPubkeyBlocked = (BLOCK_PUBKEYS.includes(event.pubkey) || blockers.includes(event.pubkey));
