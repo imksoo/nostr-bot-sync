@@ -167,9 +167,9 @@ function transmitEvent(event: Nostr.Event<0 | 1 | 2 | 3 | 5 | 40 | 41 | 42 | 100
   let proxyEventType = "";
   let sourceActivityPubUrl = "";
   for (let i = 0; i < event.tags.length; ++i) {
-    if (event.tags.length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
+    if (event.tags[i].length > 2 && event.tags[i][0] === "proxy" && event.tags[i][2] === "activitypub") {
       isProxyEventOfActivityPub = true;
-      sourceActivityPubUrl = event.tags[i][2];
+      sourceActivityPubUrl = event.tags[i][1];
     } else if (event.tags[i][0] === "proxy") {
       isProxyEvent = true;
       proxyEventType = event.tags[i][2];

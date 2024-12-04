@@ -1,4 +1,3 @@
-version: '3'
 services:
   redome-shouji:
     build: .
@@ -106,21 +105,6 @@ services:
       options:
         max-file: 4
         max-size: 16m
-  japanese-follow-bot-from-relayable:
-    build: .
-    environment:
-      - SOURCE_RELAY=wss://relayable.org
-      - DESTINATION_RELAY=wss://relay-jp.nostr.wirednet.jp
-      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
-      - BLOCK_BOT_LIST_PUBKEY=511fa8d73ca8513f6fd44751dbccf7c06b6912280f8c4f1c3f0a6bcf4b7e7f2e
-    env_file:
-      - .env
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-file: 4
-        max-size: 16m
   japanese-follow-bot-to-damus:
     build: .
     environment:
@@ -158,22 +142,6 @@ services:
     environment:
       - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
       - DESTINATION_RELAY=wss://nos.lol
-      - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
-      - BLOCK_BOT_LIST_PUBKEY=511fa8d73ca8513f6fd44751dbccf7c06b6912280f8c4f1c3f0a6bcf4b7e7f2e
-      - LANGUAGE_DETECTION=off
-    env_file:
-      - .env
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-file: 4
-        max-size: 16m
-  japanese-follow-bot-to-relayable:
-    build: .
-    environment:
-      - SOURCE_RELAY=wss://relay-jp.nostr.wirednet.jp
-      - DESTINATION_RELAY=wss://relayable.org
       - BOT_LIST_PUBKEY=087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e
       - BLOCK_BOT_LIST_PUBKEY=511fa8d73ca8513f6fd44751dbccf7c06b6912280f8c4f1c3f0a6bcf4b7e7f2e
       - LANGUAGE_DETECTION=off
